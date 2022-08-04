@@ -12,28 +12,22 @@ void S21Matrix::allocate_mem(int rows, int columns) {
 }
 
 void S21Matrix::SetZeros() {
-  if (this->IsNormalMatrix())
+  if (this->IsNormalMatrix()) {
     for (int i = 0; i < _rows; i++) {
       for (int j = 0; j < _columns; j++) {
         _matrix[i][j] = 0;
       }
     }
+  }
 }
 
-S21Matrix::S21Matrix() {
-  _rows = 0;
-  _columns = 0;
-  _matrix = nullptr;
-}
 // конструктор матрицы по рядам и столбцам
-S21Matrix::S21Matrix(int rows, int columns) {
+S21Matrix::S21Matrix(int rows, int columns) : _rows(rows), _columns(columns) {
   if (rows <= 0 || columns <= 0) {
     throw std::invalid_argument(
         "S21Matrix construct: cannot initiaize a _matrix with negative number "
         "of rows or columns");
   } else {
-    _rows = rows;
-    _columns = columns;
     this->allocate_mem(rows, columns);
     this->SetZeros();
   }
@@ -56,12 +50,9 @@ S21Matrix::S21Matrix(const S21Matrix& other) {
 // конструктор перемещения
 S21Matrix::S21Matrix(S21Matrix&& other) {
   if (this != &other) {
-    _rows = other._rows;
-    _columns = other._columns;
-    _matrix = other._matrix;
-    other._matrix = nullptr;
-    other._rows = 0;
-    other._columns = 0;
+    std::swap(_rows, other._rows);
+    std::swap(_columns, other._columns);
+    std::swap(_matrix, other._matrix);
   }
 }
 
@@ -308,24 +299,23 @@ void S21Matrix::mul_number(const double number) {
 }
 
 void S21Matrix::mul_matrix(const S21Matrix& other) {
-  S21Matrix res(_rows, _columns);
-
-  if (_rows == other._columns) {
-    for (int i = 0; i < _rows; i++) {
-      for (int j = 0; j < other._columns; j++) {
-        for (int k = 0; k < _rows; k++) {
-          res[i][j] += _matrix[i][k] * other._matrix[k][j];
-        }
-      }
-    }
-    for (int i = 0; i < _rows; i++) {
-      for (int j = 0; j < other._columns; j++) {
-        _matrix[i][j] = res._matrix[i][j];
-      }
-    }
-  } else {
-    throw std::invalid_argument("mul _matrix: matrix1 rows != matrix2 columns");
+  if (_columns != other._rows) {
+    throw std::invalid_argument("Rows from 1st M != cols from 2nd M");
   }
+  S21Matrix A(_rows, other._columns);
+  for (int i = 0; i < _rows; i++) {
+    for (int j = 0; j < other._columns; j++) {
+      for (int k = 0; k < _columns; k++) {
+        A._matrix[i][j] += _matrix[i][k] * other._matrix[k][j];
+      }
+    }
+  }
+  this->~S21Matrix();
+  _matrix = new double*[A._rows];
+  for (int i = 0; i < A._rows; i++) {
+    _matrix[i] = new double[_columns];
+  }
+  *this = A;
 }
 
 S21Matrix S21Matrix::inverse_matrix() {

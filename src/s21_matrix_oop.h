@@ -13,7 +13,7 @@ class S21Matrix {
 
  public:
   // constructors
-  S21Matrix();
+  S21Matrix() = default;
   S21Matrix(int rows, int columns);
   S21Matrix(const S21Matrix& other);
   // move constructor
